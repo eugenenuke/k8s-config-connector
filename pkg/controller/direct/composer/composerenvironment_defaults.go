@@ -118,10 +118,29 @@ var computedFieldPaths = []string{
 
 	// 7. WorkloadsConfig
 	"Config.WorkloadsConfig.Scheduler",
+	"Config.WorkloadsConfig.Scheduler.CPU",
+	"Config.WorkloadsConfig.Scheduler.MemoryGB",
+	"Config.WorkloadsConfig.Scheduler.StorageGB",
+	"Config.WorkloadsConfig.Scheduler.Count",
 	"Config.WorkloadsConfig.DagProcessor",
+	"Config.WorkloadsConfig.DagProcessor.CPU",
+	"Config.WorkloadsConfig.DagProcessor.MemoryGB",
+	"Config.WorkloadsConfig.DagProcessor.StorageGB",
+	"Config.WorkloadsConfig.DagProcessor.Count",
 	"Config.WorkloadsConfig.Triggerer",
+	"Config.WorkloadsConfig.Triggerer.CPU",
+	"Config.WorkloadsConfig.Triggerer.MemoryGB",
+	"Config.WorkloadsConfig.Triggerer.Count",
 	"Config.WorkloadsConfig.WebServer",
+	"Config.WorkloadsConfig.WebServer.CPU",
+	"Config.WorkloadsConfig.WebServer.MemoryGB",
+	"Config.WorkloadsConfig.WebServer.StorageGB",
 	"Config.WorkloadsConfig.Worker",
+	"Config.WorkloadsConfig.Worker.CPU",
+	"Config.WorkloadsConfig.Worker.MemoryGB",
+	"Config.WorkloadsConfig.Worker.StorageGB",
+	"Config.WorkloadsConfig.Worker.MinCount",
+	"Config.WorkloadsConfig.Worker.MaxCount",
 
 	// 8. WebServerConfig
 	"Config.WebServerConfig.MachineType",
@@ -217,6 +236,55 @@ func buildParentMap(desiredPb, actualPb *composerpb.Environment) map[string]pare
 			parents["Config.WorkloadsConfig"] = parentPair{
 				actual:  cfg.WorkloadsConfig.ProtoReflect(),
 				desired: dCfg.WorkloadsConfig.ProtoReflect(),
+			}
+
+			w := cfg.WorkloadsConfig
+			dW := dCfg.WorkloadsConfig
+
+			if w.Scheduler != nil {
+				if dW.Scheduler == nil {
+					dW.Scheduler = &composerpb.WorkloadsConfig_SchedulerResource{}
+				}
+				parents["Config.WorkloadsConfig.Scheduler"] = parentPair{
+					actual:  w.Scheduler.ProtoReflect(),
+					desired: dW.Scheduler.ProtoReflect(),
+				}
+			}
+			if w.DagProcessor != nil {
+				if dW.DagProcessor == nil {
+					dW.DagProcessor = &composerpb.WorkloadsConfig_DagProcessorResource{}
+				}
+				parents["Config.WorkloadsConfig.DagProcessor"] = parentPair{
+					actual:  w.DagProcessor.ProtoReflect(),
+					desired: dW.DagProcessor.ProtoReflect(),
+				}
+			}
+			if w.Triggerer != nil {
+				if dW.Triggerer == nil {
+					dW.Triggerer = &composerpb.WorkloadsConfig_TriggererResource{}
+				}
+				parents["Config.WorkloadsConfig.Triggerer"] = parentPair{
+					actual:  w.Triggerer.ProtoReflect(),
+					desired: dW.Triggerer.ProtoReflect(),
+				}
+			}
+			if w.WebServer != nil {
+				if dW.WebServer == nil {
+					dW.WebServer = &composerpb.WorkloadsConfig_WebServerResource{}
+				}
+				parents["Config.WorkloadsConfig.WebServer"] = parentPair{
+					actual:  w.WebServer.ProtoReflect(),
+					desired: dW.WebServer.ProtoReflect(),
+				}
+			}
+			if w.Worker != nil {
+				if dW.Worker == nil {
+					dW.Worker = &composerpb.WorkloadsConfig_WorkerResource{}
+				}
+				parents["Config.WorkloadsConfig.Worker"] = parentPair{
+					actual:  w.Worker.ProtoReflect(),
+					desired: dW.Worker.ProtoReflect(),
+				}
 			}
 		}
 	}
