@@ -353,4 +353,49 @@ func populateDesiredWithActualIfComputed(desired *krm.ComposerEnvironment, desir
 			pair.desired.Set(fd, pair.actual.Get(fd))
 		}
 	}
+
+	// 4. RecoveryConfig.ScheduledSnapshotsConfig handling:
+	// When snapshots are disabled in desired spec and live GCP state, align desiredPb with actualPb
+	// to avoid false drift and update loops.
+	populateScheduledSnapshotsDefaults(desired, desiredPb, actualPb)
+}
+
+// populateScheduledSnapshotsDefaults handles scheduled snapshots state inheritance and defaulting.
+// When snapshots are disabled in both desired and actual, desiredPb aligns with actualPb (nil or retained strings with enabled=false) to avoid false drift.
+// When snapshots are omitted in desired spec but enabled in actual, it actively sets enabled: false to disable on GCP.
+func populateScheduledSnapshotsDefaults(desired *krm.ComposerEnvironment, desiredPb, actualPb *composerpb.Environment) {
+	if actualPb == nil || desiredPb == nil {
+		return
+	}
+	actualRecovery := actualPb.GetConfig().GetRecoveryConfig()
+	actualSnapshots := actualRecovery.GetScheduledSnapshotsConfig()
+	desiredSnapshots := desiredPb.GetConfig().GetRecoveryConfig().GetScheduledSnapshotsConfig()
+
+	if !actualSnapshots.GetEnabled() && !desiredSnapshots.GetEnabled() {
+		if actualSnapshots != nil {
+			if desiredPb.Config == nil {
+				desiredPb.Config = &composerpb.EnvironmentConfig{}
+			}
+			if desiredPb.Config.RecoveryConfig == nil {
+				desiredPb.Config.RecoveryConfig = &composerpb.RecoveryConfig{}
+			}
+			desiredPb.Config.RecoveryConfig.ScheduledSnapshotsConfig = actualSnapshots
+		} else if desiredPb.GetConfig().GetRecoveryConfig() != nil {
+			desiredPb.Config.RecoveryConfig.ScheduledSnapshotsConfig = nil
+		}
+		return
+	}
+
+	// If scheduled snapshots is omitted in desired spec, but currently enabled on GCP, actively disable it.
+	if desiredSnapshots == nil && actualSnapshots.GetEnabled() {
+		if desiredPb.Config == nil {
+			desiredPb.Config = &composerpb.EnvironmentConfig{}
+		}
+		if desiredPb.Config.RecoveryConfig == nil {
+			desiredPb.Config.RecoveryConfig = &composerpb.RecoveryConfig{}
+		}
+		desiredPb.Config.RecoveryConfig.ScheduledSnapshotsConfig = &composerpb.ScheduledSnapshotsConfig{
+			Enabled: false,
+		}
+	}
 }

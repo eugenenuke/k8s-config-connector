@@ -530,39 +530,15 @@ var fieldUpdaters = []fieldUpdater{
 	{
 		mask: "config.recovery_config.scheduled_snapshots_config",
 		build: func(desired *krm.ComposerEnvironment, desiredPb, actualPb *composerpb.Environment) *composerpb.Environment {
-			if desired.Spec.Config != nil && desired.Spec.Config.RecoveryConfig != nil && desired.Spec.Config.RecoveryConfig.ScheduledSnapshotsConfig != nil {
-				desiredSnapshots := desiredPb.GetConfig().GetRecoveryConfig().GetScheduledSnapshotsConfig()
-				actualSnapshots := actualPb.GetConfig().GetRecoveryConfig().GetScheduledSnapshotsConfig()
-
-				// If snapshots are not enabled in actual and desired also has enabled: false, no update needed.
-				if actualSnapshots == nil && !desiredSnapshots.GetEnabled() {
-					return nil
-				}
-
-				effectiveSnapshots := proto.Clone(desiredSnapshots).(*composerpb.ScheduledSnapshotsConfig)
-				// When explicitly disabling snapshots (enabled == false), preserve existing snapshotLocation,
-				// schedule, and timezone from actualPb if omitted in spec to avoid second-pass drift and 400 rejection.
-				if !effectiveSnapshots.GetEnabled() && actualSnapshots != nil {
-					schedCfg := desired.Spec.Config.RecoveryConfig.ScheduledSnapshotsConfig
-					if schedCfg.SnapshotLocation == nil {
-						effectiveSnapshots.SnapshotLocation = actualSnapshots.SnapshotLocation
-					}
-					if schedCfg.SnapshotCreationSchedule == nil {
-						effectiveSnapshots.SnapshotCreationSchedule = actualSnapshots.SnapshotCreationSchedule
-					}
-					if schedCfg.TimeZone == nil {
-						effectiveSnapshots.TimeZone = actualSnapshots.TimeZone
-					}
-				}
-
-				if !proto.Equal(effectiveSnapshots, actualSnapshots) {
-					return &composerpb.Environment{
-						Config: &composerpb.EnvironmentConfig{
-							RecoveryConfig: &composerpb.RecoveryConfig{
-								ScheduledSnapshotsConfig: effectiveSnapshots,
-							},
+			desiredSnapshots := desiredPb.GetConfig().GetRecoveryConfig().GetScheduledSnapshotsConfig()
+			actualSnapshots := actualPb.GetConfig().GetRecoveryConfig().GetScheduledSnapshotsConfig()
+			if !proto.Equal(desiredSnapshots, actualSnapshots) {
+				return &composerpb.Environment{
+					Config: &composerpb.EnvironmentConfig{
+						RecoveryConfig: &composerpb.RecoveryConfig{
+							ScheduledSnapshotsConfig: desiredSnapshots,
 						},
-					}
+					},
 				}
 			}
 			return nil
